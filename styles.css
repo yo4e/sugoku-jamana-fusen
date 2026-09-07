@@ -1,0 +1,337 @@
+body.sjf-popup {
+  margin: 0;
+  min-width: 380px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 196, 69, 0.34), transparent 42%),
+    linear-gradient(180deg, #f4efe2 0%, #ece3d0 100%);
+  color: #161616;
+  font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+.sjf-popup * {
+  box-sizing: border-box;
+}
+
+.sjf-popup-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.sjf-popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sjf-popup-header h1,
+.sjf-section-header h2,
+.sjf-note-editor-header h3 {
+  margin: 0;
+}
+
+.sjf-kicker {
+  margin: 0 0 4px;
+  color: #8d4b00;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sjf-subtitle {
+  margin: 6px 0 0;
+  color: #4e4337;
+  font-size: 13px;
+}
+
+.sjf-master-toggle,
+.sjf-visibility-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #2a251f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sjf-composer,
+.sjf-popup-note,
+.sjf-list-section {
+  border: 1px solid rgba(91, 71, 42, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 251, 243, 0.88);
+  box-shadow: 0 10px 30px rgba(51, 38, 15, 0.08);
+}
+
+.sjf-composer,
+.sjf-list-section {
+  padding: 14px;
+}
+
+.sjf-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sjf-section-header span,
+.sjf-note-editor-meta {
+  color: #675947;
+  font-size: 12px;
+}
+
+.sjf-control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sjf-control-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.sjf-field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sjf-range-field {
+  min-width: 0;
+}
+
+.sjf-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sjf-range-wrap strong {
+  min-width: 42px;
+  color: #8d4b00;
+  font-size: 12px;
+  text-align: right;
+}
+
+.sjf-popup textarea,
+.sjf-popup select,
+.sjf-popup input[type="range"] {
+  width: 100%;
+}
+
+.sjf-popup textarea,
+.sjf-popup select {
+  border: 1px solid rgba(74, 57, 29, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #161616;
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.sjf-popup textarea {
+  min-height: 90px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.sjf-primary-button,
+.sjf-delete-button {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  transition: transform 120ms ease, opacity 120ms ease, box-shadow 120ms ease;
+}
+
+.sjf-primary-button {
+  flex: 0 0 auto;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #ffb33a 0%, #ff8f16 100%);
+  box-shadow: 0 10px 18px rgba(177, 84, 0, 0.24);
+  color: #231300;
+}
+
+.sjf-delete-button {
+  padding: 8px 12px;
+  background: rgba(23, 18, 12, 0.12);
+  color: #221b12;
+}
+
+.sjf-primary-button:hover,
+.sjf-delete-button:hover,
+.sjf-note-delete:hover {
+  opacity: 0.96;
+  transform: translateY(-1px);
+}
+
+.sjf-note-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sjf-empty-state {
+  margin: 0;
+  color: #665848;
+  font-size: 13px;
+}
+
+.sjf-popup-note {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--sjf-note-bg, rgba(255, 241, 106, 0.9));
+  border: 2px solid var(--sjf-note-border, #b8a300);
+  box-shadow: 0 12px 24px var(--sjf-note-shadow, rgba(0, 0, 0, 0.14));
+  padding: 14px;
+}
+
+.sjf-note-editor-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sjf-note-editor-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sjf-note-textarea {
+  min-height: 96px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+:host {
+  all: initial;
+  color: #111111;
+  font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+.sjf-shadow-root {
+  all: initial;
+}
+
+.sjf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+}
+
+.sjf-note {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, calc(100vw - 28px));
+  box-sizing: border-box;
+  color: #111111;
+  background: var(--sjf-note-bg, rgba(255, 241, 106, 0.9));
+  border: 3px solid var(--sjf-note-border, #b8a300);
+  border-radius: 14px 4px 14px 4px;
+  box-shadow: 0 12px 28px var(--sjf-note-shadow, rgba(0, 0, 0, 0.18));
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  cursor: grab;
+  overflow: hidden;
+}
+
+.sjf-size-small {
+  min-height: 78px;
+  padding: 14px 52px 14px 14px;
+}
+
+.sjf-size-medium {
+  min-height: 104px;
+  padding: 16px 56px 16px 16px;
+}
+
+.sjf-size-large {
+  min-height: 132px;
+  padding: 18px 60px 18px 18px;
+}
+
+.sjf-note-delete {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  inset-inline-end: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--sjf-note-button, rgba(17, 17, 17, 0.12));
+  color: #111111;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sjf-note-editor {
+  display: block;
+  flex: 1 1 auto;
+  max-height: min(40vh, 240px);
+  overflow-y: auto;
+  border: 0 !important;
+  background: transparent !important;
+  box-sizing: border-box;
+  box-shadow: none !important;
+  color: #111111;
+  font-family: inherit;
+  font-weight: 800;
+  line-height: 1.42;
+  margin: 0;
+  outline: none;
+  padding: 0;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  cursor: text;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sjf-note-editor:focus {
+  outline: none;
+  box-shadow: none !important;
+}
+
+.sjf-size-small .sjf-note-editor {
+  font-size: 14px;
+}
+
+.sjf-size-medium .sjf-note-editor {
+  font-size: 16px;
+}
+
+.sjf-size-large .sjf-note-editor {
+  font-size: 19px;
+}
+
+.sjf-dragging {
+  cursor: grabbing;
+  box-shadow: 0 18px 34px rgba(12, 8, 2, 0.26);
+  z-index: 8;
+}

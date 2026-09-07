@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>すごくじゃまなふせん</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body class="sjf-popup">
+    <main class="sjf-popup-root">
+      <section class="sjf-popup-header">
+        <div>
+          <p class="sjf-kicker">Global sticky pressure</p>
+          <h1>すごくじゃまなふせん</h1>
+          <p class="sjf-subtitle">未処理を全ページに貼りつける。</p>
+        </div>
+        <label class="sjf-master-toggle">
+          <input id="enabledToggle" type="checkbox">
+          <span>表示ON</span>
+        </label>
+      </section>
+
+      <section class="sjf-composer">
+        <div class="sjf-section-header">
+          <h2>新しい付箋</h2>
+          <span>初期透明度 90%</span>
+        </div>
+
+        <textarea
+          id="newNoteText"
+          rows="3"
+          placeholder="例: SDAAあと1本&#10;17時までに送る"
+        ></textarea>
+
+        <div class="sjf-control-grid">
+          <label class="sjf-field">
+            <span>色</span>
+            <select id="newNoteColor"></select>
+          </label>
+
+          <label class="sjf-field">
+            <span>サイズ</span>
+            <select id="newNoteSize"></select>
+          </label>
+        </div>
+
+        <div class="sjf-control-row">
+          <label class="sjf-field sjf-range-field">
+            <span>透明度</span>
+            <div class="sjf-range-wrap">
+              <input id="newNoteOpacity" type="range" min="40" max="100" step="5" value="90">
+              <strong id="newNoteOpacityValue">90%</strong>
+            </div>
+          </label>
+
+          <button id="addNoteButton" class="sjf-primary-button" type="button">
+            新しい付箋を追加
+          </button>
+        </div>
+      </section>
+
+      <section class="sjf-list-section">
+        <div class="sjf-section-header">
+          <h2>いま貼っている付箋</h2>
+          <span id="noteCount">0枚</span>
+        </div>
+
+        <p id="emptyState" class="sjf-empty-state">
+          まだ付箋はありません。上から1枚追加できます。
+        </p>
+
+        <div id="noteList" class="sjf-note-editor-list"></div>
+      </section>
+    </main>
+
+    <script src="shared.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
