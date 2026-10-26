@@ -16,3 +16,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Local test dependencies and browser evidence
+node_modules/
+test-results/

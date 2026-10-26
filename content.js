@@ -14,6 +14,8 @@
   let host;
   let mountNode;
   let lastRenderedState = null;
+  let overlay;
+  const cards = new Map();
 
   if (!shared) {
     return;
@@ -28,25 +30,11 @@
   }
 
   async function deleteNote(noteId) {
-    await shared.updateState((state) => ({
-      ...state,
-      notes: shared.renumberNotes(state.notes.filter((note) => note.id !== noteId))
-    }));
+    await shared.mutate({ kind: "delete", noteId });
   }
 
   async function updateNote(noteId, patch) {
-    await shared.updateState((state) => {
-      const timestamp = new Date().toISOString();
-
-      return {
-        ...state,
-        notes: shared.renumberNotes(
-          state.notes.map((note) =>
-            note.id === noteId ? { ...note, ...patch, updatedAt: timestamp } : note
-          )
-        )
-      };
-    });
+    await shared.mutate({ kind: "patch", noteId, patch });
   }
 
   async function updateNotePosition(noteId, position) {
@@ -184,6 +172,7 @@
 
   function createStickyNote(note) {
     const card = document.createElement("article");
+    const entry = { note, card };
     card.className = "sjf-note sjf-size-" + note.size;
     applyTheme(card, note);
 
@@ -195,34 +184,35 @@
     deleteButton.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      deleteNote(note.id).catch(console.error);
+      entry.draft.dispose();
+      deleteNote(note.id).catch((error) => { entry.draft.resume(); console.error(error); });
     });
 
-    const editor = document.createElement("div");
+    const editor = document.createElement("textarea");
     editor.className = "sjf-note-editor";
-    editor.contentEditable = "plaintext-only";
+    editor.rows = 1;
     editor.spellcheck = false;
-    editor.textContent = note.text;
+    editor.value = note.text;
     editor.setAttribute("aria-label", "付箋の内容");
     editor.setAttribute("role", "textbox");
     editor.setAttribute("aria-multiline", "true");
-    editor.addEventListener("blur", () => {
-      const nextText = editor.innerText.replace(/\r\n/g, "\n").replace(/\n$/, "");
-
-      if (nextText !== note.text) {
-        updateNote(note.id, { text: nextText }).catch(console.error);
+    const status = document.createElement("p");
+    status.className = "sjf-save-status";
+    status.setAttribute("role", "status");
+    entry.draft = globalThis.SugokuJamanaFusenEditor.bind(editor, note, status, (previousId) => {
+      const duplicate = cards.get(note.id);
+      if (duplicate && duplicate !== entry) {
+        duplicate.draft.dispose();
+        duplicate.card.remove();
       }
-    });
-    editor.addEventListener("keydown", (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-        event.preventDefault();
-        editor.blur();
-      }
+      cards.delete(previousId);
+      cards.set(note.id, entry);
+      shared.loadState().then(render).catch(console.error);
     });
 
     enableDrag(note, card, card);
-    card.append(deleteButton, editor);
-    return card;
+    card.append(deleteButton, editor, status);
+    return entry;
   }
 
   function render(state) {
@@ -233,34 +223,50 @@
       return;
     }
 
-    mountNode.replaceChildren();
-
-    const notes = normalized.enabled ? normalized.notes.filter((note) => note.visible) : [];
-
-    if (!notes.length) {
-      mountNode.hidden = true;
-      return;
+    if (!overlay || !overlay.isConnected) {
+      overlay = document.createElement("section");
+      overlay.className = "sjf-overlay";
+      overlay.setAttribute("aria-label", "すごくじゃまなふせん");
+      // One-time mount only: remove an obsolete overlay left by an extension
+      // reload. Normal storage/resize updates retain the current editors.
+      mountNode.replaceChildren(overlay);
+      cards.clear();
     }
+    const notes = normalized.enabled ? normalized.notes.filter((note) => note.visible) : [];
+    const visibleIds = new Set(notes.map((note) => note.id));
+    for (const [id, entry] of cards) {
+      if (!visibleIds.has(id)) {
+        // Keep unsaved/IME/failed edits visible until they have been protected.
+        if (entry.draft.hasDraft()) entry.draft.flush();
+        else {
+          entry.draft.dispose();
+          entry.card.remove();
+          cards.delete(id);
+        }
+      }
+    }
+    for (const note of notes) {
+      let entry = cards.get(note.id);
+      if (!entry) {
+        entry = createStickyNote({ ...note });
+        cards.set(note.id, entry);
+        overlay.appendChild(entry.card);
+      } else entry.draft.sync(note);
+      entry.card.dataset.noteId = entry.note.id;
+      entry.card.className = "sjf-note sjf-size-" + note.size +
+        (entry.card.classList.contains("sjf-dragging") ? " sjf-dragging" : "");
+      applyTheme(entry.card, note);
+    }
+    mountNode.hidden = cards.size === 0;
+    layoutCards();
+  }
 
-    mountNode.hidden = false;
-
-    const overlay = document.createElement("section");
-    overlay.className = "sjf-overlay";
-    overlay.setAttribute("aria-label", "すごくじゃまなふせん");
-    const entries = notes.map((note) => ({
-      note,
-      card: createStickyNote(note)
-    }));
-
-    entries.forEach(({ card }) => {
-      overlay.appendChild(card);
-    });
-
-    mountNode.appendChild(overlay);
-
+  function layoutCards() {
     const layout = createAutoLayoutState();
-
+    const order = new Map((lastRenderedState?.notes || []).map((note, index) => [note.id, index]));
+    const entries = [...cards.values()].sort((a, b) => (order.get(a.note.id) ?? Infinity) - (order.get(b.note.id) ?? Infinity));
     entries.forEach(({ note, card }) => {
+      if (card.classList.contains("sjf-dragging")) return;
       const rect = card.getBoundingClientRect();
       const position = note.position
         ? clampPositionToViewport(note.position.x, note.position.y, rect.width, rect.height)
@@ -289,6 +295,7 @@
       const stylesheet = document.createElement("link");
       stylesheet.rel = "stylesheet";
       stylesheet.href = chrome.runtime.getURL("styles.css");
+      stylesheet.addEventListener("load", layoutCards);
       shadow.appendChild(stylesheet);
 
       mountNode = document.createElement("div");
@@ -313,11 +320,7 @@
   async function initialize() {
     await ensureMount();
     chrome.storage.onChanged.addListener(handleStorageChange);
-    window.addEventListener("resize", () => {
-      if (lastRenderedState) {
-        render(lastRenderedState);
-      }
-    });
+    window.addEventListener("resize", layoutCards);
     render(await shared.loadState());
   }
 

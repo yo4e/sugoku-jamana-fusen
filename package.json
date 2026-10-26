@@ -1,0 +1,12 @@
+{
+  "name": "sugoku-jamana-fusen",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/storage.test.cjs",
+    "test:browser": "node --test tests/browser.test.cjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.62.1"
+  }
+}
