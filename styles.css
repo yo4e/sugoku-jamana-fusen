@@ -218,6 +218,15 @@ body.sjf-popup {
   background: rgba(255, 255, 255, 0.66);
 }
 
+.sjf-save-status {
+  margin: 0;
+  padding: 4px 0;
+  color: #4e3300;
+  font: 12px/1.4 "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+}
+
+.sjf-save-status[hidden] { display: none; }
+
 :host {
   all: initial;
   color: #111111;
@@ -290,6 +299,9 @@ body.sjf-popup {
 
 .sjf-note-editor {
   display: block;
+  field-sizing: content;
+  min-height: 1.42em;
+  resize: none;
   flex: 1 1 auto;
   max-height: min(40vh, 240px);
   overflow-y: auto;

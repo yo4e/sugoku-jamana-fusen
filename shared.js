@@ -101,7 +101,14 @@
         typeof note.updatedAt === "string" && note.updatedAt
           ? note.updatedAt
           : fallbackTimestamp,
-      order: Number.isInteger(note.order) ? note.order : index
+      order: Number.isInteger(note.order) ? note.order : index,
+      ...(typeof note.lastTextEditId === "string" ? { lastTextEditId: note.lastTextEditId } : {}),
+      ...(note.recoveredFrom && typeof note.recoveredFrom.noteId === "string"
+        ? { recoveredFrom: {
+            noteId: note.recoveredFrom.noteId,
+            reason: note.recoveredFrom.reason === "deleted" ? "deleted" : "conflict"
+          } }
+        : {})
     };
   }
 
@@ -147,10 +154,12 @@
     return normalized;
   }
 
-  async function updateState(updater) {
-    const current = await loadState();
-    const nextState = typeof updater === "function" ? updater(current) : updater;
-    return saveState(nextState);
+  async function mutate(action) {
+    const response = await chrome.runtime.sendMessage({ type: "mutate-notes", action });
+    if (!response || !response.ok) {
+      throw new Error(response && response.error || "付箋を保存できませんでした");
+    }
+    return response.note;
   }
 
   function createNote(overrides) {
@@ -230,16 +239,17 @@
     DEFAULT_SIZE_ID,
     DEFAULT_OPACITY,
     clampOpacity,
+    createId,
     createNote,
     findColorPreset,
     formatOpacity,
     getNoteTheme,
     loadState,
+    mutate,
     normalizePosition,
     normalizeNote,
     normalizeState,
     renumberNotes,
-    saveState,
-    updateState
+    saveState
   };
 })(globalThis);

@@ -8,6 +8,7 @@
   }
 
   let refs;
+  const cards = new Map();
 
   function buildOption(option) {
     const element = document.createElement("option");
@@ -43,25 +44,11 @@
   }
 
   async function updateNote(noteId, patch) {
-    await shared.updateState((state) => {
-      const timestamp = new Date().toISOString();
-
-      return {
-        ...state,
-        notes: shared.renumberNotes(
-          state.notes.map((note) =>
-            note.id === noteId ? { ...note, ...patch, updatedAt: timestamp } : note
-          )
-        )
-      };
-    });
+    await shared.mutate({ kind: "patch", noteId, patch });
   }
 
   async function deleteNote(noteId) {
-    await shared.updateState((state) => ({
-      ...state,
-      notes: shared.renumberNotes(state.notes.filter((note) => note.id !== noteId))
-    }));
+    await shared.mutate({ kind: "delete", noteId });
   }
 
   async function addNote() {
@@ -79,10 +66,7 @@
       opacity: Number(refs.newNoteOpacity.value) / 100
     });
 
-    await shared.updateState((state) => ({
-      ...state,
-      notes: shared.renumberNotes([...state.notes, note])
-    }));
+    await shared.mutate({ kind: "add", note });
 
     refs.newNoteText.value = "";
     refs.newNoteColor.value = shared.DEFAULT_COLOR_ID;
@@ -94,6 +78,7 @@
 
   function createNoteEditor(note, index) {
     const card = document.createElement("article");
+    const entry = { note, card };
     card.className = "sjf-popup-note";
     applyTheme(card, note);
 
@@ -127,7 +112,8 @@
     deleteButton.type = "button";
     deleteButton.textContent = "削除";
     deleteButton.addEventListener("click", () => {
-      deleteNote(note.id).catch(console.error);
+      entry.draft.dispose();
+      deleteNote(note.id).catch((error) => { entry.draft.resume(); console.error(error); });
     });
 
     actionGroup.append(resetPositionButton, deleteButton);
@@ -138,17 +124,23 @@
     textarea.rows = 4;
     textarea.value = note.text;
     textarea.placeholder = "未処理を書いておく";
-    textarea.addEventListener("blur", () => {
-      const nextText = textarea.value.replace(/\r\n/g, "\n");
-      if (nextText !== note.text) {
-        updateNote(note.id, { text: nextText }).catch(console.error);
+    const status = document.createElement("p");
+    status.className = "sjf-save-status";
+    status.setAttribute("role", "status");
+    entry.draft = globalThis.SugokuJamanaFusenEditor.bind(textarea, note, status, (previousId) => {
+      const duplicate = cards.get(note.id);
+      if (duplicate && duplicate !== entry) {
+        duplicate.draft.dispose();
+        duplicate.card.remove();
       }
-    });
-    textarea.addEventListener("keydown", (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
-        event.preventDefault();
-        textarea.blur();
-      }
+      cards.delete(previousId);
+      cards.set(note.id, entry);
+      shared.loadState().then((state) => {
+        render(state);
+        if (previousId !== note.id && document.activeElement === textarea) {
+          textarea.scrollIntoView({ block: "nearest" });
+        }
+      }).catch(console.error);
     });
 
     const controls = document.createElement("div");
@@ -216,8 +208,22 @@
 
     secondaryRow.append(opacityField, visibleField);
 
-    card.append(header, textarea, controls, secondaryRow);
-    return card;
+    entry.sync = (next, nextIndex) => {
+      entry.draft.sync(next);
+      title.textContent = "付箋 " + (nextIndex + 1);
+      meta.textContent = (next.visible ? "表示中 " : "非表示 ") + shared.formatOpacity(next.opacity) + " / ページ上でドラッグ可";
+      colorSelect.value = next.color;
+      sizeSelect.value = next.size;
+      // Do not interrupt an active slider gesture when another tab saves.
+      if (document.activeElement !== opacityRange) opacityRange.value = String(Math.round(next.opacity * 100));
+      opacityValue.textContent = opacityRange.value + "%";
+      visibleCheckbox.checked = next.visible;
+      card.dataset.noteId = note.id;
+      card.style.order = String(nextIndex);
+      applyTheme(card, next);
+    };
+    card.append(header, textarea, status, controls, secondaryRow);
+    return entry;
   }
 
   function render(state) {
@@ -225,10 +231,25 @@
     refs.enabledToggle.checked = normalized.enabled;
     refs.noteCount.textContent = normalized.notes.length + "枚";
     refs.emptyState.hidden = normalized.notes.length > 0;
-    refs.noteList.replaceChildren();
-
+    const ids = new Set(normalized.notes.map((note) => note.id));
+    for (const [id, entry] of cards) {
+      if (!ids.has(id)) {
+        if (entry.draft.hasDraft()) entry.draft.flush();
+        else {
+          entry.draft.dispose();
+          entry.card.remove();
+          cards.delete(id);
+        }
+      }
+    }
     normalized.notes.forEach((note, index) => {
-      refs.noteList.appendChild(createNoteEditor(note, index));
+      let entry = cards.get(note.id);
+      if (!entry) {
+        entry = createNoteEditor({ ...note }, index);
+        cards.set(note.id, entry);
+        refs.noteList.appendChild(entry.card);
+      }
+      entry.sync(note, index);
     });
   }
 
@@ -283,7 +304,7 @@
     });
     refs.enabledToggle.addEventListener("change", () => {
       shared
-        .updateState((state) => ({ ...state, enabled: refs.enabledToggle.checked }))
+        .mutate({ kind: "enabled", enabled: refs.enabledToggle.checked })
         .catch(console.error);
     });
 
